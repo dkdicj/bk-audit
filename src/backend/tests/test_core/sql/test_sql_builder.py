@@ -1076,9 +1076,10 @@ class TestSQLFunctions(TestCase):
         self.assertEqual(str(expr), "CONCAT('a','b')")
 
 
+# Doris
 class TestDorisVariantFieldSanitize(TestCase):
     def test_sanitize_variant_key_type_and_empty(self):
-        """\n        _sanitize_variant_key 对类型和空字符串做校验\n        """
+        """ _sanitize_variant_key 对类型和空字符串做校验 """
         field = DorisVariantField(keys=["k1"], name="snapshot_resource_type_info")
 
         # 非字符串 -> TypeError
@@ -1126,7 +1127,7 @@ class TestDorisVariantFieldSanitize(TestCase):
         )
 
     def test_format_keys_quote_normal_keys(self):
-        """\n        正常 keys: ["k1", "k2"] => "['k1']['k2']"（或使用 DORIS_FIELD_KEY_QUOTE）\n        """
+        """ 正常 keys: ["k1", "k2"] => "['k1']['k2']"（或使用 DORIS_FIELD_KEY_QUOTE） """
         field = DorisVariantField(
             keys=["k1", "k2"],
             name="snapshot_resource_type_info",

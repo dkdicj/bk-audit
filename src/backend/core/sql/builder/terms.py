@@ -116,13 +116,15 @@ class DorisVariantField(DorisField):
         super().__init__(*args, **kwargs)
         self.keys = keys
 
+
+
     @classmethod
     def get_field(cls, table: Table, field: Field, *args, **kwargs) -> "DorisField":
         return cls(keys=field.keys, *args, **kwargs)
 
     def _sanitize_variant_key(self, key: str) -> str:
         """对 Variant Key 做统一校验与转义，避免 SQL 注入"""
-        # 1. 基础校验（非空、类型）
+        # 1. 基础校验（非空类型）
         if not isinstance(key, str):
             raise TypeError(f"Variant Key 必须是字符串，当前类型：{type(key)}")
         if not key:
