@@ -48,8 +48,6 @@ INSTALLED_APPS += (
     "bk_resource",
     "rest_framework",
     "drf_yasg",
-    "drf_spectacular",
-    "drf_spectacular_sidecar",
     "blueapps.opentelemetry.instrument_app",
     "apigw_manager.apigw",
     "bk_notice_sdk",
@@ -166,7 +164,6 @@ REST_FRAMEWORK = {
     "DEFAULT_VERSION": "v1",
     "ALLOWED_VERSIONS": ["v1"],
     "VERSION_PARAM": "api_version",
-    "DEFAULT_SCHEMA_CLASS": "core.utils.spectacular.BKResourceAutoSchema",
 }
 
 # 平台错误代码: 7位整数，前两位表示产品代号，后5为各产品自行分配
@@ -189,7 +186,6 @@ BK_MONITOR_APIGW_NAME = os.getenv("BKAPP_BK_MONITOR_APIGW_NAME", "bkmonitorv3")
 DEVSECOPS_APIGW_NAME = os.getenv("BKAPP_DEVSECOPS_APIGW_NAME", "devsecops")
 BK_LOG_API_URL = os.getenv("BKAPP_LOG_API_URL")
 BK_BASE_API_URL = os.getenv("BKAPP_BASE_API_URL")
-BK_BASE_DEBUG_API_URL = os.getenv("BKAPP_BASE_DEBUG_API_URL", BK_BASE_API_URL or "")
 BK_CMSI_API_URL = os.getenv("BKAPP_CMSI_URL")
 BK_SOPS_API_URL = os.getenv("BKAPP_BK_SOPS_API_URL")
 BK_SOPS_APIGW_NAME = os.getenv("BKAPP_BK_SOPS_APIGW_NAME", "bk-sops")
@@ -197,12 +193,6 @@ BK_ITSM_APIGW_NAME = os.getenv("BKAPP_BK_ITSM_APIGW_NAME", "bk-itsm")
 BKIAM_APIGW_NAME = os.getenv("BKAPP_BKIAM_APIGW_NAME", "bkiam")
 BK_VISION_API_NAME = os.getenv("BKAPP_BK_VISION_API_NAME", "bk-vision")
 BK_VISION_API_URL = os.getenv("BKAPP_BK_VISION_API_URL")
-
-# AI Audit Report (智能体)
-AI_AUDIT_REPORT_APIGW_NAME = os.getenv("BKAPP_AI_AUDIT_REPORT_APIGW_NAME", "bp-ai-audit-report")
-AI_AUDIT_REPORT_API_URL = os.getenv("BKAPP_AI_AUDIT_REPORT_API_URL", "")
-AI_AUDIT_REPORT_APP_CODE = os.getenv("BKAPP_AI_AUDIT_REPORT_APP_CODE", "")
-AI_AUDIT_REPORT_SECRET_KEY = os.getenv("BKAPP_AI_AUDIT_REPORT_SECRET_KEY", "")
 
 # ESB component names
 BK_LOG_ESB_NAME = os.getenv("BKAPP_BK_LOG_ESB_NAME", "bk_log")
@@ -214,18 +204,6 @@ CMSI_ESB_NAME = os.getenv("BKAPP_CMSI_ESB_NAME", "cmsi")
 SWAGGER_SETTINGS = {
     "DEFAULT_INFO": "urls.info",
     "DEFAULT_GENERATOR_CLASS": "bk_resource.utils.generators.BKResourceOpenAPISchemaGenerator",
-}
-
-SPECTACULAR_SETTINGS = {
-    'TITLE': 'Audit',
-    'DESCRIPTION': '审计中心 API',
-    'VERSION': 'v1',
-    'SERVE_INCLUDE_SCHEMA': False,
-    'COMPONENT_SPLIT_REQUEST': True,
-    'ENABLE_PYDANTIC_V2': True,
-    'SWAGGER_UI_DIST': 'SIDECAR',
-    'SWAGGER_UI_FAVICON_HREF': 'SIDECAR',
-    'REDOC_DIST': 'SIDECAR',
 }
 
 DEFAULT_NAMESPACE = os.getenv("BKAPP_DEFAULT_NAMESPACE", "default")
@@ -422,9 +400,6 @@ BK_AUDIT_SETTINGS = {
 # 全局配置
 BK_SHARED_RES_URL = os.getenv("BKAPP_BK_SHARED_RES_URL", os.getenv("BKPAAS_SHARED_RES_URL", ""))
 
-# 租户id
-BK_TENANT_ID = os.getenv("BKPAAS_APP_TENANT_ID") or "tencent"
-
 # CORS 允许的 header
 CORS_ALLOW_HEADERS = [
     "x-requested-with",
@@ -524,7 +499,7 @@ LOG_EXPORT_STATUS_ACCESS_TOKEN = os.getenv("BKAPP_LOG_EXPORT_STATUS_ACCESS_TOKEN
 # metric report
 METRIC_REPORT_TRACE_URL = os.getenv("BKAPP_METRIC_REPORT_TRACE_URL", "")
 # bkvision是否更新
-BKVISION_UPDATE_CRON_MINUTE = os.getenv("BKAPP_BKVISION_UPDATE_CRON_MINUTE", "*/5")
+BKVISION_UPDATE_HOUR = os.getenv("BKAPP_BKVISION_UPDATE_HOUR", "*/1")
 # bkvision是否更新任务超时时间
 BKVISION_UPDATE_TASK_TIMEOUT = int(os.getenv("BKAPP_BKVISION_UPDATE_TASK_TIMEOUT", 60 * 10))
 
@@ -576,6 +551,9 @@ BKAPP_IEGSEC_HELPER = os.getenv("BKAPP_IEGSEC_HELPER", "")
 
 # 审计中心场景的iwiki链接
 BKAPP_SCENE_IWIKI_URL = os.getenv("BKAPP_SCENE_IWIKI_URL", "")
+
+BKBASE_GEOG_AREA_CODE = os.getenv("BKAPP_BKBASE_GEOG_AREA_CODE", "inland")
+BKBASE_DATA_REGION = os.getenv("BKAPP_BKBASE_DATA_REGION", "inland")
 
 """
 以下为框架代码 请勿修改
