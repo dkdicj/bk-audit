@@ -19,11 +19,6 @@ to the current version of the project delivered to anyone in the future.
 from unittest import mock
 from unittest.mock import Mock
 
-from django.conf import settings
-from django.core.exceptions import ValidationError
-from django.core.validators import ProhibitNullCharactersValidator
-
-from api.bk_log.serializers import GetCollectorTailLogResponseSerializer
 from apps.exceptions import JoinDataPreCheckFailed, SnapshotPreparingException
 from apps.meta.constants import ConfigLevelChoices
 from apps.meta.models import GlobalMetaConfig, ResourceType, System
@@ -46,8 +41,6 @@ from tests.test_databus.collector.constants import (
     COLLECTOR_STATUS_RESULT,
     COLLECTOR_STATUS_RESULT_NODATA,
     COLLECTOR_STATUS_RESULT_NORMAL,
-    CREATE_API_PUSH_DATA,
-    CREATE_API_PUSH_RESP,
     CREATE_BCS_COLLECTOR_API_RESP,
     CREATE_BCS_COLLECTOR_DATA,
     CREATE_BCS_COLLECTOR_RESULT,
@@ -60,8 +53,6 @@ from tests.test_databus.collector.constants import (
     ETL_FIELD_HISTORY_RESULT,
     ETL_PREVIEW_DATA,
     ETL_PREVIEW_RESULT,
-    GET_API_PUSH_DATA,
-    GET_API_PUSH_RESP,
     GET_BCS_YAML_TEMPLATE_RESULT,
     GET_COLLECTOR_INFO_DATA,
     GET_COLLECTOR_RESULT_DATA,
@@ -92,7 +83,6 @@ class CollectorTest(TestCase):
     """
 
     def setUp(self) -> None:
-        super().setUp()
         self.collector = CollectorConfig.objects.create(**COLLECTOR_DATA)
         CollectorPlugin.objects.create(**PLUGIN_DATA)
         System.objects.create(
@@ -101,8 +91,6 @@ class CollectorTest(TestCase):
             provider_config={"host": SYSTEM_HOST, "token": SYSTEM_TOKEN},
             callback_url=SYSTEM_HOST,
             auth_token=SYSTEM_TOKEN,
-            created_by="admin",
-            updated_by="admin",
         )
         ResourceType.objects.create(
             system_id=self.system_id,
@@ -130,16 +118,6 @@ class CollectorTest(TestCase):
             config_level=ConfigLevelChoices.NAMESPACE.value,
             instance_key=self.namespace,
         )
-        # 避免测试触发 Celery broker（Redis）连接
-        self._create_api_push_etl_delay_patch = mock.patch(
-            "databus.collector.resources.create_api_push_etl.delay",
-            mock.Mock(),
-        )
-        self._create_api_push_etl_delay_patch.start()
-
-    def tearDown(self) -> None:
-        self._create_api_push_etl_delay_patch.stop()
-        super().tearDown()
 
     def test_get_collectors(self):
         """GetCollectorsResource"""
