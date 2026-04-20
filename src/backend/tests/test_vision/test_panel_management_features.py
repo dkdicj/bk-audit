@@ -27,11 +27,16 @@ from services.web.vision.resources import (
     PublishScenePanel,
     TogglePanelFavorite,
     UpdatePanelPreference,
+    UpdatePlatformPanel,
     UpdateScenePanel,
     UpdateSceneReportGroupOrder,
     UpdateSceneReportGroupPanelOrder,
 )
-from services.web.vision.views import PanelsViewSet, ScenePanelManageViewSet
+from services.web.vision.views import (
+    PanelsViewSet,
+    ScenePanelManageViewSet,
+    SceneReportGroupManageViewSet,
+)
 
 
 class TestPanelManagementFeatures(TestCase):
@@ -128,15 +133,51 @@ class TestPanelManagementFeatures(TestCase):
         self.assertIn("binding_type", data[0])
         self.assertFalse(SceneReportGroupItem.objects.filter(group=platform_group, panel_id=panel_data["id"]).exists())
 
-    def test_delete_platform_group_is_forbidden(self):
+    def test_delete_empty_platform_group_success(self):
         group = SceneReportGroup.objects.create(
             scene=self.scene1,
             name="平台报表",
             group_type=ReportGroupType.PLATFORM,
             priority_index=-1,
         )
-        with self.assertRaisesMessage(Exception, "平台报表分组不支持删除"):
-            DeleteSceneReportGroup().request({"scene_id": self.scene1.scene_id, "group_id": group.id})
+
+        DeleteSceneReportGroup().request({"scene_id": self.scene1.scene_id, "group_id": group.id})
+        self.assertFalse(SceneReportGroup.objects.filter(id=group.id).exists())
+
+    def test_recreate_platform_group_when_platform_panel_authorized(self):
+        panel_data = CreatePlatformPanel().request(
+            {
+                "name": "平台报表可重建分组",
+                "status": "published",
+                "visibility": {
+                    "visibility_type": VisibilityScope.SPECIFIC_SCENES,
+                    "scene_ids": [self.scene1.scene_id],
+                    "system_ids": [],
+                },
+            }
+        )
+        panel_id = panel_data["id"]
+        group = SceneReportGroup.objects.get(scene_id=self.scene1.scene_id, group_type=ReportGroupType.PLATFORM)
+        SceneReportGroupItem.objects.filter(group=group, panel_id=panel_id).delete()
+        DeleteSceneReportGroup().request({"scene_id": self.scene1.scene_id, "group_id": group.id})
+        self.assertFalse(SceneReportGroup.objects.filter(id=group.id).exists())
+
+        UpdatePlatformPanel().request(
+            {
+                "panel_id": panel_id,
+                "visibility": {
+                    "visibility_type": VisibilityScope.SPECIFIC_SCENES,
+                    "scene_ids": [self.scene1.scene_id],
+                    "system_ids": [],
+                },
+            }
+        )
+
+        recreated_group = SceneReportGroup.objects.get(
+            scene_id=self.scene1.scene_id,
+            group_type=ReportGroupType.PLATFORM,
+        )
+        self.assertTrue(SceneReportGroupItem.objects.filter(group=recreated_group, panel_id=panel_id).exists())
 
     def test_delete_non_empty_group_is_forbidden(self):
         panel_resp = CreateScenePanel().request(
@@ -268,6 +309,24 @@ class TestPanelManagementFeatures(TestCase):
     def test_scene_manage_viewset_has_publish_route(self):
         publish_routes = [route for route in ScenePanelManageViewSet.resource_routes if route.endpoint == "publish"]
         self.assertEqual(len(publish_routes), 1)
+
+    def test_scene_manage_viewset_not_contains_group_routes(self):
+        group_routes = [
+            route
+            for route in ScenePanelManageViewSet.resource_routes
+            if route.endpoint in {"group", "group/order", "group-item/order"}
+        ]
+        self.assertEqual(group_routes, [])
+
+    def test_scene_group_manage_viewset_has_group_routes(self):
+        route_map = {
+            (route.method.upper(), route.endpoint or "") for route in SceneReportGroupManageViewSet.resource_routes
+        }
+        self.assertIn(("POST", ""), route_map)
+        self.assertIn(("PUT", ""), route_map)
+        self.assertIn(("DELETE", ""), route_map)
+        self.assertIn(("POST", "order"), route_map)
+        self.assertIn(("POST", "item/order"), route_map)
 
     def test_panels_viewset_has_group_list_route(self):
         group_routes = [

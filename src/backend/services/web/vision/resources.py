@@ -855,8 +855,6 @@ class DeleteSceneReportGroup(BKVision):
             id=validated_request_data["group_id"],
             scene_id=validated_request_data["scene_id"],
         )
-        if group.group_type == ReportGroupType.PLATFORM:
-            raise drf_serializers.ValidationError({"group_id": "平台报表分组不支持删除"})
         if group.items.exists():
             raise drf_serializers.ValidationError({"group_id": "分组下仍有报表，无法删除"})
         group.delete()
