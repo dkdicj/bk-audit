@@ -19,6 +19,7 @@ from services.web.vision.models import (
 from services.web.vision.resources import (
     CreatePlatformPanel,
     CreateScenePanel,
+    CreateSceneReportGroup,
     DeleteSceneReportGroup,
     ListPanels,
     ListPlatformPanels,
@@ -29,6 +30,7 @@ from services.web.vision.resources import (
     UpdatePanelPreference,
     UpdatePlatformPanel,
     UpdateScenePanel,
+    UpdateSceneReportGroup,
     UpdateSceneReportGroupOrder,
     UpdateSceneReportGroupPanelOrder,
 )
@@ -57,6 +59,27 @@ class TestPanelManagementFeatures(TestCase):
         assert_dict_contains(resp, {"name": "场景报表1"})
         panel = VisionPanel.objects.get(id=resp["id"])
         self.assertTrue(SceneReportGroupItem.objects.filter(group=self.scene_group, panel=panel).exists())
+
+    def test_create_scene_group_duplicate_name_returns_validation_error(self):
+        with self.assertRaisesMessage(Exception, "同一场景下分组名称已存在"):
+            CreateSceneReportGroup().request({"scene_id": self.scene1.scene_id, "name": self.scene_group.name})
+
+    def test_update_scene_group_duplicate_name_returns_validation_error(self):
+        another_group = SceneReportGroup.objects.create(
+            scene=self.scene1,
+            name="另一个分组",
+            group_type=ReportGroupType.CUSTOM,
+            priority_index=2,
+        )
+
+        with self.assertRaisesMessage(Exception, "同一场景下分组名称已存在"):
+            UpdateSceneReportGroup().request(
+                {
+                    "scene_id": self.scene1.scene_id,
+                    "group_id": another_group.id,
+                    "name": self.scene_group.name,
+                }
+            )
 
     def test_list_platform_panels_with_visibility(self):
         CreatePlatformPanel().request(

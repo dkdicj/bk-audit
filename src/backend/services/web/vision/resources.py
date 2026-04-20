@@ -21,7 +21,7 @@ from collections import defaultdict
 from typing import Dict, List
 
 from bk_resource import api
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import Q
 from django.utils.translation import gettext_lazy
 from rest_framework import serializers as drf_serializers
@@ -810,12 +810,15 @@ class CreateSceneReportGroup(BKVision):
     ResponseSerializer = SceneReportGroupSerializer
 
     def perform_request(self, validated_request_data):
-        group = SceneReportGroup.objects.create(
-            scene_id=validated_request_data["scene_id"],
-            name=validated_request_data["name"],
-            group_type=ReportGroupType.CUSTOM,
-            priority_index=validated_request_data.get("priority_index", 0),
-        )
+        try:
+            group = SceneReportGroup.objects.create(
+                scene_id=validated_request_data["scene_id"],
+                name=validated_request_data["name"],
+                group_type=ReportGroupType.CUSTOM,
+                priority_index=validated_request_data.get("priority_index", 0),
+            )
+        except IntegrityError:
+            raise drf_serializers.ValidationError({"name": "同一场景下分组名称已存在"})
         return group
 
 
@@ -836,7 +839,10 @@ class UpdateSceneReportGroup(BKVision):
             group.name = validated_request_data["name"]
         if "priority_index" in validated_request_data:
             group.priority_index = validated_request_data["priority_index"]
-        group.save()
+        try:
+            group.save()
+        except IntegrityError:
+            raise drf_serializers.ValidationError({"name": "同一场景下分组名称已存在"})
         return group
 
 
