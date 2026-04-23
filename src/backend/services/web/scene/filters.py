@@ -499,8 +499,12 @@ class CompositeScopeFilter:
                 )
                 return queryset.filter(**{f"{pk_field}__in": visible_ids})
             else:
-                # 未指定场景/系统，不返回任何资源
-                return queryset.none()
+                # 未指定场景/系统时，返回全部平台级绑定资源
+                platform_resource_ids = ResourceBinding.objects.filter(
+                    resource_type=resource_type,
+                    binding_type=BindingType.PLATFORM_BINDING,
+                ).values_list("resource_id", flat=True)
+                return queryset.filter(**{f"{pk_field}__in": platform_resource_ids})
 
         if binding_type == BindingType.SCENE_BINDING:
             # 场景级资源仅可关联一个场景，不支持通过 system_id 过滤

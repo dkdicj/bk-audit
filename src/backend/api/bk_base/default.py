@@ -39,7 +39,7 @@ from api.bk_base.serializers import (
     UserAuthCheckReqSerializer,
     UserAuthCheckRespSerializer,
 )
-from api.domains import BK_BASE_API_URL
+from api.domains import BK_BASE_API_URL, BK_BASE_DEBUG_API_URL
 
 
 class BkBaseResource(BkApiResource, abc.ABC):
@@ -52,6 +52,12 @@ class BkBaseResource(BkApiResource, abc.ABC):
         data["bk_username"] = bk_resource_settings.PLATFORM_AUTH_ACCESS_USERNAME
         data["bk_app_code"] = settings.APP_CODE
         return data
+
+
+class DebugBkBaseResource(BkBaseResource, abc.ABC):
+    """用于调试场景的 BKBase 资源，支持独立 base_url。"""
+
+    base_url = BK_BASE_DEBUG_API_URL
 
 
 class DatabusStoragesPost(BkBaseResource):
@@ -404,6 +410,17 @@ class GetSensitivityInfoViaDataset(BkBaseResource):
 class QuerySyncResource(BkBaseResource):
     """
     查询数据
+    """
+
+    action = "/v3/queryengine/query_sync/"
+    method = "POST"
+    TIMEOUT = 60 * 5
+    RequestSerializer = QuerySyncRequestSerializer
+
+
+class DebugQuerySyncResource(DebugBkBaseResource):
+    """
+    调试环境查询数据
     """
 
     action = "/v3/queryengine/query_sync/"

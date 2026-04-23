@@ -13,6 +13,10 @@ from api.bk_base.serializers import (
 )
 
 
+def expected_project_id():
+    return None if settings.BKBASE_PROJECT_ID is None else int(settings.BKBASE_PROJECT_ID)
+
+
 class TestProjectDataBatchCheckReqSerializer(SimpleTestCase):
     def test_should_fill_default_project_id(self):
         object_id = "mock_rt_7f3a9c2d"
@@ -24,8 +28,7 @@ class TestProjectDataBatchCheckReqSerializer(SimpleTestCase):
         )
 
         self.assertTrue(serializer.is_valid(), serializer.errors)
-        self.assertEqual(serializer.validated_data["project_id"], int(settings.BKBASE_PROJECT_ID))
-        self.assertIsInstance(serializer.validated_data["project_id"], int)
+        self.assertEqual(serializer.validated_data["project_id"], expected_project_id())
         self.assertEqual(serializer.validated_data["action_id"], UserAuthActionEnum.RT_QUERY)
 
 
@@ -34,8 +37,7 @@ class TestProjectDataBatchAddReqSerializer(SimpleTestCase):
         serializer = ProjectDataBatchAddReqSerializer(data={"object_ids": ["11_hltest"]})
 
         self.assertTrue(serializer.is_valid(), serializer.errors)
-        self.assertEqual(serializer.validated_data["project_id"], int(settings.BKBASE_PROJECT_ID))
-        self.assertIsInstance(serializer.validated_data["project_id"], int)
+        self.assertEqual(serializer.validated_data["project_id"], expected_project_id())
         self.assertEqual(serializer.validated_data["bk_biz_id"], settings.DEFAULT_BK_BIZ_ID)
 
 
@@ -89,8 +91,7 @@ class TestProjectDataBatchCheckResource(SimpleTestCase):
         )
         kwargs = resource.session.request.call_args.kwargs
         self.assertTrue(kwargs["url"].endswith(f"/v3/auth/projects/{settings.BKBASE_PROJECT_ID}/data/batch_check/"))
-        self.assertEqual(kwargs["json"]["project_id"], int(settings.BKBASE_PROJECT_ID))
-        self.assertIsInstance(kwargs["json"]["project_id"], int)
+        self.assertEqual(kwargs["json"]["project_id"], expected_project_id())
         self.assertEqual(kwargs["json"]["action_id"], UserAuthActionEnum.RT_QUERY)
 
 
@@ -115,8 +116,7 @@ class TestProjectDataBatchAddResource(SimpleTestCase):
         self.assertEqual(result, "ok")
         kwargs = resource.session.request.call_args.kwargs
         self.assertTrue(kwargs["url"].endswith(f"/v3/auth/projects/{settings.BKBASE_PROJECT_ID}/data/batch_add/"))
-        self.assertEqual(kwargs["json"]["project_id"], int(settings.BKBASE_PROJECT_ID))
-        self.assertIsInstance(kwargs["json"]["project_id"], int)
+        self.assertEqual(kwargs["json"]["project_id"], expected_project_id())
         self.assertEqual(kwargs["json"]["bk_biz_id"], settings.DEFAULT_BK_BIZ_ID)
         self.assertEqual(kwargs["json"]["object_ids"], ["11_hltest"])
 
