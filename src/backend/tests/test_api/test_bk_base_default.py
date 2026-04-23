@@ -3,6 +3,7 @@ from unittest import mock
 
 from django.conf import settings
 from django.test import SimpleTestCase
+from django.test.utils import override_settings
 
 from api.bk_base.constants import UserAuthActionEnum
 from api.bk_base.default import ProjectDataBatchAdd, ProjectDataBatchCheck
@@ -14,9 +15,10 @@ from api.bk_base.serializers import (
 
 
 def expected_project_id():
-    return None if settings.BKBASE_PROJECT_ID is None else int(settings.BKBASE_PROJECT_ID)
+    return int(settings.BKBASE_PROJECT_ID)
 
 
+@override_settings(BKBASE_PROJECT_ID="591")
 class TestProjectDataBatchCheckReqSerializer(SimpleTestCase):
     def test_should_fill_default_project_id(self):
         object_id = "mock_rt_7f3a9c2d"
@@ -32,6 +34,7 @@ class TestProjectDataBatchCheckReqSerializer(SimpleTestCase):
         self.assertEqual(serializer.validated_data["action_id"], UserAuthActionEnum.RT_QUERY)
 
 
+@override_settings(BKBASE_PROJECT_ID="591")
 class TestProjectDataBatchAddReqSerializer(SimpleTestCase):
     def test_should_fill_default_project_and_biz_id(self):
         serializer = ProjectDataBatchAddReqSerializer(data={"object_ids": ["11_hltest"]})
@@ -51,6 +54,7 @@ class TestGetMineResultTablesReqSerializer(SimpleTestCase):
         self.assertEqual(serializer.validated_data["bk_biz_id"], settings.DEFAULT_BK_BIZ_ID)
 
 
+@override_settings(BKBASE_PROJECT_ID="591")
 class TestProjectDataBatchCheckResource(SimpleTestCase):
     @mock.patch.object(ProjectDataBatchCheck, "build_header", return_value={})
     def test_request_should_validate_and_parse_response(self, _mock_build_header):
@@ -95,6 +99,7 @@ class TestProjectDataBatchCheckResource(SimpleTestCase):
         self.assertEqual(kwargs["json"]["action_id"], UserAuthActionEnum.RT_QUERY)
 
 
+@override_settings(BKBASE_PROJECT_ID="591")
 class TestProjectDataBatchAddResource(SimpleTestCase):
     @mock.patch.object(ProjectDataBatchAdd, "build_header", return_value={})
     def test_request_should_validate_and_parse_response(self, _mock_build_header):
