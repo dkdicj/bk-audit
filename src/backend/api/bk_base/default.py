@@ -29,6 +29,11 @@ from django.utils.translation import gettext_lazy
 from api.bk_base.constants import UNSUPPORTED_CODE
 from api.bk_base.serializers import (
     DataflowBatchStatusListReqSerializer,
+    GetMineResultTablesReqSerializer,
+    ProjectDataBatchAddReqSerializer,
+    ProjectDataBatchAddRespSerializer,
+    ProjectDataBatchCheckReqSerializer,
+    ProjectDataBatchCheckRespSerializer,
     QuerySyncRequestSerializer,
     UserAuthBatchCheckReqSerializer,
     UserAuthCheckReqSerializer,
@@ -304,6 +309,20 @@ class GetResultTables(BkBaseResource):
     method = "GET"
 
 
+class GetMineResultTables(BkBaseResource):
+    name = gettext_lazy("获取我有权限的结果表列表")
+    action = "/v3/meta/result_tables/mine/"
+    method = "GET"
+    platform_authorization = False
+    RequestSerializer = GetMineResultTablesReqSerializer
+
+    def build_request_data(self, validated_request_data: dict) -> dict:
+        bk_username = validated_request_data["bk_username"]
+        data = super().build_request_data(validated_request_data)
+        data["bk_username"] = bk_username
+        return data
+
+
 class GetResultTable(BkBaseResource):
     name = gettext_lazy("获取结果表")
     method = "GET"
@@ -323,6 +342,36 @@ class GetProjectData(BkBaseResource):
     action = "/v3/auth/projects/{project_id}/data/"
     method = "GET"
     url_keys = ["project_id"]
+
+
+class ProjectDataBatchCheck(BkBaseResource):
+    """
+    批量校验项目数据权限
+    """
+
+    name = gettext_lazy("批量校验项目数据权限")
+    action = "/v3/auth/projects/{project_id}/data/batch_check/"
+    method = "POST"
+    url_keys = ["project_id"]
+    RequestSerializer = ProjectDataBatchCheckReqSerializer
+    ResponseSerializer = ProjectDataBatchCheckRespSerializer
+
+
+class ProjectDataBatchAdd(BkBaseResource):
+    """
+    批量添加项目数据权限
+    """
+
+    name = gettext_lazy("批量添加项目数据权限")
+    action = "/v3/auth/projects/{project_id}/data/batch_add/"
+    method = "POST"
+    url_keys = ["project_id"]
+    RequestSerializer = ProjectDataBatchAddReqSerializer
+    ResponseSerializer = ProjectDataBatchAddRespSerializer
+
+    def validate_response_data(self, response_data):
+        validated_response_data = super().validate_response_data({"data": response_data})
+        return validated_response_data["data"]
 
 
 class GetAlertConfigs(BkBaseResource):

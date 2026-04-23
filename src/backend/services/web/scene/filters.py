@@ -277,10 +277,8 @@ class CompositeScopeFilter:
                 visible_ids.add(binding.resource_id)
 
             elif binding.visibility_type == VisibilityScope.ALL_SYSTEMS:
-                # 全系统可见：按 system_id 过滤时直接可见；按 scene_id 过滤时仅对有关联系统的场景可见
+                # 全系统可见：仅按 system_id 过滤时直接可见
                 if system_ids:
-                    visible_ids.add(binding.resource_id)
-                elif scene_ids and SceneSystem.objects.filter(scene_id__in=scene_ids).exists():
                     visible_ids.add(binding.resource_id)
 
             elif binding.visibility_type == VisibilityScope.SPECIFIC_SCENES:
