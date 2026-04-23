@@ -235,10 +235,23 @@ class ScenePanelListItemSerializer(VisionPanelBaseSerializer):
     group_id = serializers.IntegerField(allow_null=True)
     group_name = serializers.CharField(allow_blank=True)
     group_type = serializers.CharField(allow_blank=True)
-    binding_type = serializers.CharField(allow_blank=True)
+    binding_type = serializers.ChoiceField(
+        choices=BindingType.choices,
+        required=False,
+        allow_null=True,
+        label="绑定类型",
+        help_text="资源绑定类型：platform_binding 表示平台级绑定，scene_binding 表示场景级绑定",
+    )
 
 
 class PlatformPanelListItemSerializer(VisionPanelBaseSerializer):
+    binding_type = serializers.ChoiceField(
+        choices=BindingType.choices,
+        required=False,
+        allow_null=True,
+        label="绑定类型",
+        help_text="资源绑定类型：platform_binding 表示平台级绑定，scene_binding 表示场景级绑定",
+    )
     visibility_type = serializers.CharField()
     scene_ids = serializers.ListField(child=serializers.IntegerField())
     system_ids = serializers.ListField(child=serializers.CharField())
@@ -251,6 +264,13 @@ class PanelPublishResponseSerializer(serializers.ModelSerializer):
 
 
 class PanelSquareListItemSerializer(VisionPanelBaseSerializer):
+    binding_type = serializers.ChoiceField(
+        choices=BindingType.choices,
+        required=False,
+        allow_null=True,
+        label="绑定类型",
+        help_text="资源绑定类型：platform_binding 表示平台级绑定，scene_binding 表示场景级绑定",
+    )
     group_ids = serializers.ListField(child=serializers.IntegerField(), allow_empty=True)
     favorite_created_at = serializers.DateTimeField(allow_null=True)
 
