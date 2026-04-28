@@ -54,6 +54,16 @@ class EsQueryTest(TestCase):
         result = self.resource.query.search(**SEARCH_PARAMS)
         self.assertEqual(result, SEARCH_DATA)
 
+    @mock.patch("query.resources.resource.query.es_query", mock.Mock(return_value=ES_QUERY_SEARCH_API_RESP))
+    def test_search_all_without_scope(self):
+        """SearchAllResource 不要求 scope 参数"""
+        params = deepcopy(SEARCH_PARAMS)
+        params.pop("scope_type")
+
+        result = self.resource.query.search_all(**params)
+
+        self.assertEqual(result, SEARCH_DATA)
+
     @mock.patch(
         "query.resources.SearchLogPermission.get_scope_auth_systems",
         mock.Mock(side_effect=PermissionException(action_name="", apply_url="", permission={})),

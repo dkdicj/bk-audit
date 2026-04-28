@@ -98,7 +98,7 @@ class FieldMapRequestSerializer(serializers.Serializer):
         return [field for field in value.split(",") if field]
 
 
-class EsQuerySearchAttrSerializer(QueryScopeQuerySerializer):
+class EsQuerySearchAllAttrSerializer(serializers.Serializer):
     namespace = serializers.CharField()
     start_time = serializers.CharField()
     end_time = serializers.CharField()
@@ -233,6 +233,10 @@ class EsQuerySearchAttrSerializer(QueryScopeQuerySerializer):
             ]
         )
         return filters
+
+
+class EsQuerySearchAttrSerializer(EsQuerySearchAllAttrSerializer, QueryScopeQuerySerializer):
+    pass
 
 
 class QuerySearchResponseSerializer(serializers.Serializer):
