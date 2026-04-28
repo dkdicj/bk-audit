@@ -695,16 +695,20 @@ class TestSceneResource(TestCase):
         self.assertEqual(result["strategy_ids"], [strategy.strategy_id])
         self.assertEqual(result["risk_count"], 1)
 
-    def test_create_scene_validate_systems_schema(self):
-        """测试创建场景时 systems 子序列化器校验生效"""
-        with self.assertRaises(ValidateException):
+    def test_create_scene_all_systems_without_system_id(self):
+        """创建场景选择全系统时允许不传 system_id"""
+        with mock.patch(
+            "services.web.scene.resources.IAMGroupManager.create_scene_groups_with_members",
+            return_value={"iam_manager_group_id": 1, "iam_viewer_group_id": 2},
+        ):
             self.resource.scene.create_scene(
-                {
-                    "name": "systems-校验",
-                    "managers": ["admin"],
-                    "systems": [{"is_all_systems": True}],
-                }
+                {"name": "systems-全系统", "managers": ["admin"], "systems": [{"is_all_systems": True}]}
             )
+
+        scene = Scene.objects.get(name="systems-全系统")
+        scene_system = SceneSystem.objects.get(scene=scene)
+        self.assertEqual(scene_system.system_id, "")
+        self.assertTrue(scene_system.is_all_systems)
 
     def test_create_scene_validate_tables_schema(self):
         """测试创建场景时 tables 子序列化器校验生效"""
@@ -769,15 +773,13 @@ class TestSceneResource(TestCase):
             self.assertEqual(result["managers"], ["scene_admin"])
             self.assertEqual(result["users"], ["scene_user1", "scene_user2"])
 
-    def test_update_scene_validate_systems_schema(self):
-        """测试更新场景时 systems 子序列化器校验生效"""
-        with self.assertRaises(ValidateException):
-            self.resource.scene.update_scene(
-                {
-                    "scene_id": self.scene.scene_id,
-                    "systems": [{"is_all_systems": True}],
-                }
-            )
+    def test_update_scene_all_systems_without_system_id(self):
+        """更新场景选择全系统时允许不传 system_id"""
+        self.resource.scene.update_scene({"scene_id": self.scene.scene_id, "systems": [{"is_all_systems": True}]})
+
+        scene_system = SceneSystem.objects.get(scene=self.scene)
+        self.assertEqual(scene_system.system_id, "")
+        self.assertTrue(scene_system.is_all_systems)
 
     def test_update_scene_validate_tables_schema(self):
         """测试更新场景时 tables 子序列化器校验生效"""

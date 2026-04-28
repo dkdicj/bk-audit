@@ -30,8 +30,8 @@ from apps.meta.models import Tag
 from core.serializers import AnyValueField, TimestampIntegerField
 from core.utils.distutils import strtobool
 from core.utils.time import mstimestamp_to_date_string
-from services.web.common.constants import ScopeQueryField, ScopeType
-from services.web.common.serializers import ScopeQuerySerializer
+from services.web.common.constants import ScopeQueryField
+from services.web.common.serializers import OptionalScopeQuerySerializer
 from services.web.risk.constants import (
     RAW_EVENT_ID_REMARK,
     RISK_LEVEL_ORDER_FIELD,
@@ -419,28 +419,12 @@ class TicketNodeProviderSerializer(serializers.ModelSerializer):
         fields = ["id", "risk_id", "operator"]
 
 
-class RiskScopeQuerySerializer(ScopeQuerySerializer):
+class RiskScopeQuerySerializer(OptionalScopeQuerySerializer):
     """风险域可选 scope 参数。
 
     - 不传 scope_type/scope_id：表示不过滤场景范围
-    - 传了 scope_type：沿用 ScopeQuerySerializer 的校验规则
+    - 传了 scope_type：沿用 OptionalScopeQuerySerializer 的校验规则
     """
-
-    scope_type = serializers.ChoiceField(choices=ScopeType.choices, required=False, allow_null=True)
-    scope_id = serializers.CharField(required=False, allow_blank=True, allow_null=True)
-
-    def validate(self, attrs: dict) -> dict:
-        scope_type = attrs.get(ScopeQueryField.SCOPE_TYPE)
-        scope_id = attrs.get(ScopeQueryField.SCOPE_ID)
-
-        if not scope_type:
-            if scope_id:
-                raise serializers.ValidationError({ScopeQueryField.SCOPE_TYPE: "传入 scope_id 时必须同时传入 scope_type。"})
-            attrs.pop(ScopeQueryField.SCOPE_TYPE, None)
-            attrs.pop(ScopeQueryField.SCOPE_ID, None)
-            return attrs
-
-        return super().validate(attrs)
 
 
 class ListRiskBaseRequestSerializer(serializers.Serializer):
