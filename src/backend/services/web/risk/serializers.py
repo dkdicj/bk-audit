@@ -52,11 +52,26 @@ from services.web.risk.models import (
     TicketPermission,
 )
 from services.web.risk.report_config import AIVariableConfig
+from services.web.scene.constants import ResourceVisibilityType
+from services.web.scene.models import ResourceBindingScene
 from services.web.strategy_v2.models import Strategy
 from services.web.strategy_v2.serializers import (
     EventFieldSerializer,
     merge_select_field_type,
 )
+
+
+def get_strategy_scene_id(strategy_id: int | None) -> int | None:
+    if not strategy_id:
+        return None
+    return (
+        ResourceBindingScene.objects.filter(
+            binding__resource_type=ResourceVisibilityType.STRATEGY,
+            binding__resource_id=str(strategy_id),
+        )
+        .values_list("scene_id", flat=True)
+        .first()
+    )
 
 
 class CreateEventSerializer(serializers.Serializer):
@@ -242,6 +257,7 @@ class RiskReportSerializer(serializers.ModelSerializer):
 class RiskInfoSerializer(serializers.ModelSerializer):
     status = serializers.CharField(source="display_status", read_only=True)
     strategy_id = serializers.IntegerField(label=gettext_lazy("Strategy ID"))
+    scene_id = serializers.SerializerMethodField()
     tags = serializers.SerializerMethodField()
     event_end_time = serializers.SerializerMethodField()
     has_report = serializers.SerializerMethodField()
@@ -284,6 +300,9 @@ class RiskInfoSerializer(serializers.ModelSerializer):
         """
 
         return obj.get_tag_ids()
+
+    def get_scene_id(self, obj: Risk) -> int | None:
+        return get_strategy_scene_id(obj.strategy_id)
 
     class Meta:
         model = Risk
@@ -829,6 +848,47 @@ class RiskRuleInfoSerializer(serializers.ModelSerializer):
 
 
 class RuleScopeValidator(serializers.Serializer):
+    @staticmethod
+    def _get_rule_scene_id(rule_id: int) -> int | None:
+        if not rule_id:
+            return None
+        return (
+            ResourceBindingScene.objects.filter(
+                binding__resource_type=ResourceVisibilityType.RISK_RULE,
+                binding__resource_id=str(rule_id),
+            )
+            .values_list("scene_id", flat=True)
+            .first()
+        )
+
+    def get_scene_id(self, attrs: dict) -> int | None:
+        return attrs.get("scene_id") or self._get_rule_scene_id(attrs.get("rule_id"))
+
+    def _validate_process_application_scene(self, attrs: dict) -> None:
+        pa_id = attrs.get("pa_id")
+        if pa_id is None:
+            return
+
+        scene_id = self.get_scene_id(attrs)
+        if scene_id is None:
+            return
+
+        if not ProcessApplication.objects.filter(id=pa_id).exists():
+            raise serializers.ValidationError({"pa_id": gettext("处理套餐不存在")})
+
+        is_bound = ResourceBindingScene.objects.filter(
+            scene_id=scene_id,
+            binding__resource_type=ResourceVisibilityType.PROCESS_APPLICATION,
+            binding__resource_id=str(pa_id),
+        ).exists()
+        if not is_bound:
+            raise serializers.ValidationError({"pa_id": gettext("处理套餐[%s]不属于场景[%s]") % (pa_id, scene_id)})
+
+    def validate(self, attrs: dict) -> dict:
+        data = super().validate(attrs)
+        self._validate_process_application_scene(data)
+        return data
+
     def validate_scope(self, scope: List[dict]) -> List[dict]:
         q = RiskRuleOperator.build_query_filter(scope)
         try:
@@ -1089,6 +1149,7 @@ class RetrieveRiskStrategyInfoAPIGWRequestSerializer(serializers.Serializer):
 
 
 class RetrieveRiskStrategyInfoResponseSerializer(serializers.ModelSerializer):
+    scene_id = serializers.SerializerMethodField()
     strategy_name = serializers.CharField(label=gettext_lazy("Strategy Name"))
     strategy_type = serializers.CharField(label=gettext_lazy("Strategy Type"))
     event_basic_field_configs = serializers.ListField(
@@ -1113,6 +1174,7 @@ class RetrieveRiskStrategyInfoResponseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Strategy
         fields = [
+            "scene_id",
             "strategy_name",
             "strategy_type",
             "risk_level",
@@ -1123,6 +1185,9 @@ class RetrieveRiskStrategyInfoResponseSerializer(serializers.ModelSerializer):
             "event_evidence_field_configs",
             "risk_meta_field_config",
         ]
+
+    def get_scene_id(self, obj: Strategy) -> int | None:
+        return get_strategy_scene_id(obj.strategy_id)
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
