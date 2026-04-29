@@ -8,6 +8,18 @@ from tests.base import TestCase
 
 class TestSqlAnalyseResource(TestCase):
     def setUp(self):
+        # mock get_request_username 返回有效用户名，避免 UserAuthBatchCheck 校验 user_id 为空
+        self.patcher_username_resources = mock.patch(
+            "services.web.tool.resources.get_request_username",
+            return_value="test_user",
+        )
+        self.patcher_username_resources.start()
+        self.patcher_username_executor = mock.patch(
+            "services.web.tool.executor.tool.get_request_username",
+            return_value="test_user",
+        )
+        self.patcher_username_executor.start()
+
         self.patcher_auth = mock.patch.object(
             UserAuthBatchCheck,
             "perform_request",

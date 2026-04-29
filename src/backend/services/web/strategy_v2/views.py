@@ -190,7 +190,7 @@ class StrategyTableViewSet(ResourceViewSet):
     # TODO: 需要补充内部数据权限筛选
 
     def get_permissions(self):
-        return [
+        base_permissions = [
             ActionPermission(
                 actions=[
                     ActionEnum.CREATE_STRATEGY,
@@ -200,6 +200,11 @@ class StrategyTableViewSet(ResourceViewSet):
                 ]
             )
         ]
+
+        if self.action == "list":
+            return [IAMPermission(actions=[ActionEnum.MANAGE_PLATFORM])] + base_permissions
+        else:
+            return base_permissions
 
     resource_routes = [
         ResourceRoute("GET", resource.strategy_v2.list_tables),

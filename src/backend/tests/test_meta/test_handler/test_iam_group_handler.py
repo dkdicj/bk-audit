@@ -248,29 +248,23 @@ class TestSyncGroupMembers(SimpleTestCase):
 
 
 class TestCreateIamGroupsIntegration(SimpleTestCase):
-    """集成测试：CreateScene._create_iam_groups"""
+    """集成测试：IAMGroupManager.create_scene_groups_with_members"""
 
     def test_create_iam_groups_success(self):
-        """测试成功创建用户组并回写 scene 字段"""
-        from services.web.scene.resources import CreateScene
-
-        scene = mock.MagicMock()
-        scene.scene_id = 1
-        scene.name = "测试场景"
-        scene.managers = ["admin"]
-        scene.users = ["viewer1"]
-        scene.iam_manager_group_id = None
-        scene.iam_viewer_group_id = None
-
+        """测试成功创建用户组并返回正确的 group id"""
         with mock.patch.object(
             CreateGradeManagerGroups, "perform_request", return_value=[2001, 2002]
         ), mock.patch.object(GrantGroupPolicies, "perform_request", return_value={}), mock.patch.object(
             AddGroupMembers, "perform_request", return_value={}
         ) as mock_add:
-            CreateScene._create_iam_groups(scene)
-            self.assertEqual(scene.iam_manager_group_id, 2001)
-            self.assertEqual(scene.iam_viewer_group_id, 2002)
-            scene.save.assert_called_once_with(update_fields=["iam_manager_group_id", "iam_viewer_group_id"])
+            result = IAMGroupManager.create_scene_groups_with_members(
+                scene_id="1",
+                scene_name="测试场景",
+                manager_members=[{"type": "user", "id": "admin"}],
+                viewer_members=[{"type": "user", "id": "viewer1"}],
+            )
+            self.assertEqual(result["iam_manager_group_id"], 2001)
+            self.assertEqual(result["iam_viewer_group_id"], 2002)
             self.assertEqual(mock_add.call_count, 2)
 
 

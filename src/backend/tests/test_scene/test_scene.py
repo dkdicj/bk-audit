@@ -775,7 +775,11 @@ class TestSceneResource(TestCase):
 
     def test_update_scene_all_systems_without_system_id(self):
         """更新场景选择全系统时允许不传 system_id"""
-        self.resource.scene.update_scene({"scene_id": self.scene.scene_id, "systems": [{"is_all_systems": True}]})
+        with mock.patch(
+            "services.web.scene.resources.IAMGroupManager.create_scene_groups_with_members",
+            return_value={"iam_manager_group_id": 1, "iam_viewer_group_id": 2},
+        ):
+            self.resource.scene.update_scene({"scene_id": self.scene.scene_id, "systems": [{"is_all_systems": True}]})
 
         scene_system = SceneSystem.objects.get(scene=self.scene)
         self.assertEqual(scene_system.system_id, "")
@@ -825,12 +829,16 @@ class TestSceneResource(TestCase):
 
     def test_scene_info_patch(self):
         """测试编辑场景基础信息"""
-        result = self.resource.scene.update_scene_info(
-            {
-                "scene_id": self.scene.scene_id,
-                "name": "修改后的名称",
-            }
-        )
+        with mock.patch(
+            "services.web.scene.resources.IAMGroupManager.create_scene_groups_with_members",
+            return_value={"iam_manager_group_id": 1, "iam_viewer_group_id": 2},
+        ):
+            result = self.resource.scene.update_scene_info(
+                {
+                    "scene_id": self.scene.scene_id,
+                    "name": "修改后的名称",
+                }
+            )
         self.assertEqual(result["name"], "修改后的名称")
 
 

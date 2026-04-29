@@ -150,11 +150,16 @@ class DeleteGroupMembers(IAMBaseResource):
         member_ids = validated_request_data.pop("ids", [])
         if isinstance(member_ids, list):
             member_ids = ",".join(member_ids)
-        self._delete_params = {"type": member_type, "ids": member_ids}
+        # 将参数存储在请求数据中而不是实例变量中，避免并发问题
+        validated_request_data["_delete_params"] = {"type": member_type, "ids": member_ids}
         return validated_request_data
 
     def before_request(self, kwargs: dict) -> dict:
-        # 将 type/ids 作为 query 参数注入
-        kwargs.pop("json", None)
-        kwargs["params"] = self._delete_params
+        # 从请求数据中提取 type/ids 作为 query 参数注入
+        request_data = kwargs.get("data", {})
+        if "_delete_params" in request_data:
+            kwargs.pop("json", None)
+            kwargs["params"] = request_data["_delete_params"]
+            # 清理临时存储的参数
+            request_data.pop("_delete_params", None)
         return kwargs

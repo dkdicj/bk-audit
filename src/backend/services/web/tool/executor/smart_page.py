@@ -134,7 +134,12 @@ def render_sql_template(sql_template: str, params: dict) -> str:
     env = jinja2_environment(autoescape=False)
 
     def has(key: str) -> bool:
-        return key in params and params.get(key) not in (None, "")
+        value = params.get(key)
+        if value is None or value == "":
+            return False
+        if isinstance(value, (list, tuple)) and len(value) == 0:
+            return False
+        return key in params
 
     def bind(key: str, output_type: Optional[str] = None) -> str:
         if key not in params:

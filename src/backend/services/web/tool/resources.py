@@ -1175,12 +1175,12 @@ class SqlAnalyseResource(ToolBase, Resource):
         # 获取场景授权的表
         scene_authorized_tables = set(SceneDataFilter.get_table_ids(scene_id))
 
-        # 构造带 table_name 属性的对象列表，以复用 check_table_permission
-        table_objs = [type('Table', (), {'table_name': t['table_name']})() for t in referenced_tables]
+        # 提取表名字符串列表，直接传给 check_table_permission
+        table_names = [t['table_name'] for t in referenced_tables]
 
         # 场景授权 OR 个人权限，满足其一即可
         SqlDataSearchExecutor.check_table_permission(
-            referenced_tables=table_objs,
+            referenced_tables=table_names,
             scene_authorized_tables=scene_authorized_tables,
             user_id=get_request_username(),
         )
@@ -1449,16 +1449,15 @@ class DeletePlatformSceneTool(DeleteTool):
         if tool and tool.status == PanelStatus.PUBLISHED:
             raise SceneToolCannotDelete()
 
-        from services.web.scene.filters import SceneScopeFilter
+        # 将绑定删除和工具清理操作包装在同一个事务中，确保原子性
+        with transaction.atomic():
+            # 复用父类 DeleteTool 的核心删除逻辑（包含 enum mapping 清理）
+            result = super().perform_request(validated_request_data)
 
-        # 删除绑定关系（级联删除关联的场景和系统）
-        SceneScopeFilter.delete_resource_binding(
-            resource_id=uid,
-            resource_type=ResourceVisibilityType.TOOL,
-        )
+            # 删除绑定关系（级联删除关联的场景和系统）
+            binding.delete()
 
-        # 复用父类 DeleteTool 的核心删除逻辑（包含 enum mapping 清理）
-        return super().perform_request(validated_request_data)
+        return result
 
 
 class PublishPlatformSceneTool(ToolBase):
@@ -1586,16 +1585,15 @@ class DeleteSceneScopeTool(DeleteTool):
         if not binding.binding_scenes.filter(scene_id=int(scene_id)).exists():
             raise SceneToolNotExist()
 
-        from services.web.scene.filters import SceneScopeFilter
+        # 将绑定删除和工具清理操作包装在同一个事务中，确保原子性
+        with transaction.atomic():
+            # 复用父类 DeleteTool 的核心删除逻辑（包含 enum mapping 清理）
+            result = super().perform_request(validated_request_data)
 
-        # 删除绑定关系（级联删除关联的场景）
-        SceneScopeFilter.delete_resource_binding(
-            resource_id=uid,
-            resource_type=ResourceVisibilityType.TOOL,
-        )
+            # 删除绑定关系（级联删除关联的场景）
+            binding.delete()
 
-        # 复用父类 DeleteTool 的核心删除逻辑（包含 enum mapping 清理）
-        return super().perform_request(validated_request_data)
+        return result
 
 
 class PublishSceneScopeTool(ToolBase):

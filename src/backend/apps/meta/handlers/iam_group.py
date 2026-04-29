@@ -22,7 +22,9 @@ from bk_resource import api
 from blueapps.utils.logger import logger
 from django.conf import settings
 
+from apps.permission.handlers.actions import get_action_by_id
 from apps.permission.handlers.actions.action import ActionEnum
+from apps.permission.handlers.resource_types import ResourceEnum
 
 # 场景管理用户组拥有的操作列表
 SCENE_MANAGER_GROUP_ACTIONS = [
@@ -84,45 +86,21 @@ class IAMGroupManager:
         actions = [{"id": action.id} for action in actions]
 
         # 根据动作类型分组，支持多资源类型动作
+        # 从 ActionEnum 定义的 related_resource_types 中自动获取资源类型
         action_groups = {}
 
         for action in actions:
             action_id = action["id"]
 
-            # 确定每个动作的资源类型
-            resource_type = "scene"  # 默认资源类型
-
-            # 场景相关动作使用 scene 资源类型
-            if action_id in ["view_scene", "manage_scene"]:
-                resource_type = "scene"
-            # 策略相关动作使用 scene 资源类型
-            elif action_id in [
-                "edit_strategy",
-                "delete_strategy",
-                "generate_strategy_risk",
-            ]:
-                resource_type = "strategy"
-            elif action_id in ["list_strategy_v2", "create_strategy_v2"]:
-                resource_type = "scene"
-            # 风险相关动作使用 risk 资源类型
-            elif action_id in ["list_risk_v2", "edit_risk_v2", "process_risk"]:
-                resource_type = "risk"
-            # 规则相关动作使用 scene 资源类型（根据动作定义）
-            elif action_id in ["list_rule_v2", "create_rule_v2", "edit_rule_v2", "delete_rule_v2"]:
-                resource_type = "scene"
-            # 联表相关动作根据动作定义使用不同的资源类型
-            elif action_id in ["list_link_table_v2", "create_link_table_v2"]:
-                resource_type = "scene"
-            elif action_id in ["view_link_table", "edit_link_table", "delete_link_table"]:
-                resource_type = "link_table"
-            # 通知组相关动作根据动作定义使用不同的资源类型
-            elif action_id in ["list_notice_group_v2", "create_notice_group_v2"]:
-                resource_type = "scene"
-            elif action_id in ["edit_notice_group_v2", "delete_notice_group_v2"]:
-                resource_type = "notice_group"
-            # 套餐相关动作使用 scene 资源类型（根据动作定义）
-            elif action_id in ["list_pa_v2", "create_pa_v2", "edit_pa_v2"]:
-                resource_type = "scene"
+            # 从 ActionEnum 定义中获取关联的资源类型，默认使用 scene
+            try:
+                action_meta = get_action_by_id(action_id)
+                if action_meta.related_resource_types:
+                    resource_type = action_meta.related_resource_types[0].id
+                else:
+                    resource_type = ResourceEnum.SCENE.id
+            except Exception:
+                resource_type = ResourceEnum.SCENE.id
 
             # 按资源类型分组动作
             if resource_type not in action_groups:
