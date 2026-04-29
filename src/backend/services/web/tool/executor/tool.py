@@ -221,12 +221,14 @@ class SqlDataSearchExecutor(
         """
         获取工具关联的场景ID
         """
+        from services.web.scene.constants import BindingType
         from services.web.scene.models import ResourceBindingScene
 
         return (
             ResourceBindingScene.objects.filter(
                 binding__resource_type=ResourceVisibilityType.TOOL,
                 binding__resource_id=tool_uid,
+                binding__binding_type=BindingType.SCENE_BINDING,
             )
             .values_list("scene_id", flat=True)
             .first()
@@ -236,7 +238,8 @@ class SqlDataSearchExecutor(
     def check_table_permission(referenced_tables: List[str], scene_authorized_tables: set, user_id: str, tool=None):
         """
         表权限校验：
-        如果是场景工具：校验工具绑定场景是否被授权相关表 OR 工具责任人是否有表权限
+        1. 场景授权的表：直接通过
+        2. 场景未授权的表（场景工具）：校验工具责任人权限 AND 当前用户权限
         """
         if not referenced_tables:
             return
@@ -262,7 +265,6 @@ class SqlDataSearchExecutor(
         if not tables_need_check:
             return
 
-        # 场景工具和平台工具
         if tool:
             scene_id = SqlDataSearchExecutor._get_tool_scene_id(tool.uid)
 
@@ -285,8 +287,7 @@ class SqlDataSearchExecutor(
                         if not rt.get("result"):
                             # 工具责任人没有权限的表，立即抛出异常
                             raise DataSearchTablePermission(rt.get("user_id"), rt.get("object_id"))
-                    # 责任人权限全部通过，无需再检查当前用户权限
-                    return
+                    # 责任人权限全部通过，继续检查当前用户权限
 
         # 对需要检查的表，校验当前用户个人权限
         permissions = [

@@ -204,7 +204,7 @@ class CreateScene(SceneResource):
             )
 
     @staticmethod
-    def _create_scene_manager_notice_group(scene, managers=None):
+    def _create_scene_manager_notice_group(scene):
         """创建场景时自动创建场景管理员通知组"""
         from apps.notice.models import NoticeGroup
         from services.web.scene.constants import BindingType, ResourceVisibilityType
@@ -212,7 +212,7 @@ class CreateScene(SceneResource):
 
         notice_group = NoticeGroup.objects.create(
             group_name=f"{scene.name}-场景管理员通知组",
-            group_member=managers or [],
+            group_member=scene.managers,
             notice_config=[],
             description=f"场景「{scene.name}」的管理员通知组（系统自动创建）",
         )
@@ -300,7 +300,7 @@ class UpdateScene(SceneResource):
             raise SceneNotExist()
 
         # 更新基础字段
-        for field in ["name", "description"]:
+        for field in ["name", "description", "managers", "users"]:
             if field in validated_request_data:
                 setattr(scene, field, validated_request_data[field])
         scene.save()
@@ -431,7 +431,7 @@ class UpdateSceneInfo(SceneResource):
         except Scene.DoesNotExist:
             raise SceneNotExist()
 
-        for field in ["name", "description"]:
+        for field in ["name", "description", "managers", "users"]:
             if field in validated_request_data:
                 setattr(scene, field, validated_request_data[field])
         scene.save()

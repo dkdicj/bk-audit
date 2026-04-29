@@ -188,6 +188,7 @@ class PlatformTableViewSet(ResourceViewSet):
 
 class StrategyTableViewSet(ResourceViewSet):
     # TODO: 需要补充内部数据权限筛选
+    # 表元数据入口当前只做 any-instance 策略动作权限，未按场景/表范围过滤。
 
     def get_permissions(self):
         base_permissions = [
