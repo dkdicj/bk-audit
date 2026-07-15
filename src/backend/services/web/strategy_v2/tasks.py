@@ -228,7 +228,7 @@ def check_strategy_status_anomalies():
                         "target": strategy.strategy_id,
                         "event_name": "strategy_exception",
                         "event": {
-                            "content": reason,
+                            "content": f"[策略{strategy.strategy_id}] [{strategy.strategy_name}] 异常：{reason}",
                         },
                         "dimension": {
                             "strategy_id": str(strategy.strategy_id),

@@ -409,7 +409,7 @@ class TestCheckStrategyStatusAnomaliesTask(TestCase):
         for i, event in enumerate(event_data["data"]):
             assert event["target"] == i  # strategy_id
             assert event["event_name"] == "strategy_exception"
-            assert event["event"]["content"] == "expect_flow=running, actual=no-start"
+            assert event["event"]["content"] == f"[策略{i}] [测试策略{i}] 异常：expect_flow=running, actual=no-start"
             assert event["dimension"]["strategy_id"] == str(i)
             assert event["dimension"]["strategy_status"] == "running"
             assert event["dimension"]["flow_status"] == "no-start"
