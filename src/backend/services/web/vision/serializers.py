@@ -21,7 +21,7 @@ from rest_framework import serializers
 from core.serializers import ExtraDataSerializerMixin, FlexibleListField
 from services.web.common.constants import ScopeQueryField, ScopeType
 from services.web.common.serializers import ScopeQuerySerializer
-from services.web.scene.constants import BindingType, PanelStatus
+from services.web.scene.constants import BindingType, PanelStatus, VisibilityScope
 from services.web.scene.serializers import ResourceBindingInputSerializer
 from services.web.vision.models import (
     ReportUserPreference,
@@ -183,12 +183,7 @@ class PlatformPanelListQuerySerializer(serializers.Serializer):
     description = FlexibleListField(child=serializers.CharField(allow_blank=True), required=False, label="报表描述")
     updated_by = FlexibleListField(child=serializers.CharField(allow_blank=True), required=False, label="更新人")
     visibility_type = serializers.ChoiceField(
-        choices=[
-            ("all_visible", "全部可见"),
-            ("all_scenes", "全部场景"),
-            ("specific_scenes", "指定场景"),
-            ("scenes_and_systems", "场景和系统"),
-        ],
+        choices=VisibilityScope.choices,
         required=False,
         label="可见范围类型",
     )
